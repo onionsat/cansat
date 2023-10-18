@@ -1,6 +1,6 @@
- /*
- * Hőmérséklet+páratartalom+légnyomás (BME280) szenzor könyvtár importálás
- */
+/*
+* Hőmérséklet+páratartalom+légnyomás (BME280) szenzor könyvtár importálás
+*/
  
 #include <Wire.h>
 #include <SPI.h>
@@ -16,9 +16,9 @@
 
 Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK);
 
- /*
- * GPS szenzor könyvtár importálás
- */
+/*
+* GPS szenzor könyvtár importálás
+*/
  
 #include <Adafruit_GPS.h>
 #include <SoftwareSerial.h>
@@ -29,9 +29,9 @@ Adafruit_GPS GPS(&gpsSerial);
 
 unsigned long delayTime;
 
- /*
- * Mikrokontroller initializáció
- */
+/*
+* Mikrokontroller initializáció
+*/
 
 void setup() {
     Serial.begin(250000);
@@ -77,7 +77,6 @@ void setup() {
 uint32_t timer = millis();
 
 void loop() { 
-
     char c = GPS.read();
 
     if (GPS.newNMEAreceived()) {
@@ -92,9 +91,7 @@ void loop() {
       Serial.print("--------- GPS adat ---------");
       gpsRead();
     }
-
 }
-
 
 void bmeRead() {
     Serial.print("Homerseklet: "); Serial.print(bme.readTemperature()); Serial.println(" °C");
@@ -133,4 +130,3 @@ void gpsRead() {
       Serial.print("Antenna statusz: "); Serial.println((int)GPS.antenna);
     }
 }
-
