@@ -7,10 +7,10 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
-#define BME_SCK 13
-#define BME_MISO 12
-#define BME_MOSI 11
-#define BME_CS 10
+#define BME_SCK 12
+#define BME_MISO 11
+#define BME_MOSI 10
+#define BME_CS 9
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 
@@ -21,11 +21,11 @@ Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK);
 */
  
 #include <Adafruit_GPS.h>
-#include <SoftwareSerial.h>
+#include <HardwareSerial.h>
 
-SoftwareSerial gpsSerial(8, 7);
-Adafruit_GPS GPS(&gpsSerial);
-#define GPSECHO  true
+#define GPSSerial Serial0
+
+Adafruit_GPS GPS(&GPSSerial);
 
 unsigned long delayTime;
 
@@ -35,8 +35,9 @@ unsigned long delayTime;
 
 void setup() {
     Serial.begin(250000);
-    while(!Serial); // Várakozás a serial kapcsolat felépülésére
-    
+    //while(!Serial); // Várakozás a serial kapcsolat felépülésére
+    delay(5000);0
+     
     /*
     * BME280 initializáció
     */
@@ -71,7 +72,7 @@ void setup() {
 
     delay(1000);
   
-    gpsSerial.println(PMTK_Q_RELEASE);
+    GPSSerial.println(PMTK_Q_RELEASE);
 }
 
 uint32_t timer = millis();
@@ -83,12 +84,12 @@ void loop() {
       if (!GPS.parse(GPS.lastNMEA())) return;
     }
 
-    if (millis() - timer > 500) {
+    if (millis() - timer > 200) {
       timer = millis();
       
-      Serial.print("--------- BME280 adat ---------");
+      Serial.println("--------- BME280 adat ---------");
       bmeRead();
-      Serial.print("--------- GPS adat ---------");
+      Serial.println("--------- GPS adat ---------");
       gpsRead();
     }
 }
@@ -101,7 +102,7 @@ void bmeRead() {
 }
 
 void gpsRead() {
-    Serial.print("Fix muholdak: "); Serial.print((int)GPS.fix); Serial.print(" (minoseg:"); Serial.println((int)GPS.fixquality); Serial.print(")");
+    Serial.print("Fix muholdak: "); Serial.print((int)GPS.fix); Serial.print(" (minoseg: "); Serial.print((int)GPS.fixquality); Serial.println(")");
     Serial.print("Datum: ");
     Serial.print("20"); Serial.print(GPS.year, DEC); Serial.print('-');
     Serial.print(GPS.month, DEC); Serial.print('-');
