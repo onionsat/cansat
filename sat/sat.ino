@@ -36,7 +36,7 @@ unsigned long delayTime;
 void setup() {
     Serial.begin(250000);
     //while(!Serial); // Várakozás a serial kapcsolat felépülésére
-    delay(5000);0
+    delay(5000);
      
     /*
     * BME280 initializáció
