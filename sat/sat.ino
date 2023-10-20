@@ -30,8 +30,33 @@ Adafruit_GPS GPS(&GPSSerial);
 unsigned long delayTime;
 
 /*
+* ADXL345 initializáció
+*/
+
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_ADXL345_U.h>
+
+float xInit = 0;
+float yInit = 0;
+float zInit = 0;
+
+float xHiba;
+float yHiba;
+float zHiba;
+
+float xVart = 0;
+float yVart = 0;
+float zVart = 9.81;
+
+
+/* Assign a unique ID to this sensor at the same time */
+Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
+
+/*
 * Mikrokontroller initializáció
 */
+sensors_event_t event; 
 
 void setup() {
     Serial.begin(250000);
@@ -73,6 +98,31 @@ void setup() {
     delay(1000);
   
     GPSSerial.println(PMTK_Q_RELEASE);
+
+    if(!accel.begin())
+  {
+    /* There was a problem detecting the ADXL345 ... check your connections */
+    Serial.println("Ooops, no ADXL345 detected ... Check your wiring!");
+    while(1);
+  }
+
+  /* Set the range to whatever is appropriate for your project */
+  accel.setRange(ADXL345_RANGE_2_G);
+
+  delay(2000);
+
+  for(int i = 0; i<20; i++){
+    accel.getEvent(&event);
+    xInit = xInit + event.acceleration.x;
+    yInit = yInit + event.acceleration.y;
+    zInit = zInit + event.acceleration.z;
+    delay(100);
+  }
+
+  xHiba = xVart-(xInit/20);
+  yHiba = yVart-(yInit/20);
+  zHiba = zVart-(zInit/20);
+
 }
 
 uint32_t timer = millis();
@@ -87,10 +137,22 @@ void loop() {
     if (millis() - timer > 200) {
       timer = millis();
       
-      Serial.println("--------- BME280 adat ---------");
-      bmeRead();
-      Serial.println("--------- GPS adat ---------");
-      gpsRead();
+     // Serial.println("--------- BME280 adat ---------");
+     // bmeRead();
+     // Serial.println("--------- GPS adat ---------");
+     // gpsRead();
+     // Serial.println("adxl");
+     //   sensors_event_t event; 
+  //accel.getEvent(&event);
+ 
+  /* Display the results (acceleration is measured in m/s^2) */
+  float xValos = (event.acceleration.x) - xHiba;
+  float yValos = (event.acceleration.y) - yHiba;
+  float zValos = (event.acceleration.z) - zHiba;
+ Serial.print("X: "); Serial.print(xValos); Serial.print("  ");
+ Serial.print("Y: "); Serial.print(yValos); Serial.print("  ");
+ Serial.print("Z: "); Serial.print(zValos); Serial.print("  ");Serial.println("m/s^2 ");
+  delay(500);
     }
 }
 
