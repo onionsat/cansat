@@ -37,6 +37,8 @@ unsigned long delayTime;
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL345_U.h>
 
+#define LED_BUILTIN 13
+
 float xInit = 0;
 float yInit = 0;
 float zInit = 0;
@@ -122,7 +124,9 @@ void setup() {
   xHiba = xVart-(xInit/20);
   yHiba = yVart-(yInit/20);
   zHiba = zVart-(zInit/20);
-
+  
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 uint32_t timer = millis();
@@ -134,26 +138,28 @@ void loop() {
       if (!GPS.parse(GPS.lastNMEA())) return;
     }
 
-    if (millis() - timer > 200) {
+    if (millis() - timer > 100) {
       timer = millis();
       
-     // Serial.println("--------- BME280 adat ---------");
-     // bmeRead();
-     // Serial.println("--------- GPS adat ---------");
-     // gpsRead();
-     // Serial.println("adxl");
-     //   sensors_event_t event; 
-  //accel.getEvent(&event);
- 
-  /* Display the results (acceleration is measured in m/s^2) */
-  float xValos = (event.acceleration.x) - xHiba;
-  float yValos = (event.acceleration.y) - yHiba;
-  float zValos = (event.acceleration.z) - zHiba;
- Serial.print("X: "); Serial.print(xValos); Serial.print("  ");
- Serial.print("Y: "); Serial.print(yValos); Serial.print("  ");
- Serial.print("Z: "); Serial.print(zValos); Serial.print("  ");Serial.println("m/s^2 ");
-  delay(500);
+      Serial.println("--------- BME280 adat ---------");
+      bmeRead();
+      Serial.println("--------- GPS adat ---------");
+      gpsRead();
+      Serial.println("--------- ADXL adat ---------");
+      acceleroRead();
     }
+}
+
+void acceleroRead() {
+  sensors_event_t event; 
+  accel.getEvent(&event);
+  Serial.print("X (valos): "); Serial.println((event.acceleration.x));
+  Serial.print("Y (valos): "); Serial.println((event.acceleration.y));
+ Serial.print("Z (valos): "); Serial.println((event.acceleration.z));
+  /* Display the results (acceleration is measured in m/s^2) */
+ Serial.print("X: "); Serial.println((event.acceleration.x + xHiba));
+ Serial.print("Y: "); Serial.println((event.acceleration.y + yHiba));
+ Serial.print("Z: "); Serial.println((event.acceleration.z + zHiba));
 }
 
 void bmeRead() {
