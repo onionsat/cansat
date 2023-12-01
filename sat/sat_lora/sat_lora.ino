@@ -148,11 +148,12 @@ void loop() {
       if (!GPS.parse(GPS.lastNMEA())) return;
     }
 
-    if (millis() - timer > 1000) {
+    if (millis() - timer > 200) {
       timer = millis();
-      
+      int sensorPin = A7;
+      int sensorValue = analogRead(sensorPin);
       //gps|gps_speed|gps_muhold|gps_time|gps_angle|temperature|humidity|pressure|calibrated_alt|x_real|y_real|z_real|x|y|z
-      Serial.println(gpsRead() + "|" + bmeRead() + "|" + acceleroRead());
+      Serial.println(gpsRead() + "|" + bmeRead() + "|" + acceleroRead() + "|" + sensorValue);
     }
 }
 
