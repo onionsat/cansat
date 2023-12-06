@@ -26,6 +26,10 @@ Adafruit_GPS GPS(&locSerial);
 
 unsigned long delayTime;
 
+#include <HardwareSerial.h>
+
+//HardwareSerial loraSerial();
+
 /*
 * ADXL345 initializáció
 */
@@ -61,6 +65,9 @@ sensors_event_t event;
 
 void setup() {
     locSerial.begin(9600, EspSoftwareSerial::SWSERIAL_8N1, 7, 8);
+    Serial0.begin(115200, SERIAL_8N1, 1, 0);
+    Serial.begin(115200);
+    delay(1000);
     
     //while(!Serial); // Várakozás a serial kapcsolat felépülésére
      
@@ -150,11 +157,32 @@ void loop() {
 
     if (millis() - timer > 200) {
       timer = millis();
-      int sensorPin = A7;
-      int sensorValue = analogRead(sensorPin);
+      //int sensorPin = A7;
+      //int sensorValue = analogRead(sensorPin);
       //gps|gps_speed|gps_muhold|gps_time|gps_angle|temperature|humidity|pressure|calibrated_alt|x_real|y_real|z_real|x|y|z
-      Serial.println(gpsRead() + "|" + bmeRead() + "|" + acceleroRead() + "|" + sensorValue);
+      //if(Serial0.available()){
+        Serial0.println("radio tx " + stringToHex(gpsRead() + "|" + bmeRead() + "|" + acceleroRead()) + " 1");
+      //} else {
+        //Serial.println("radio tx " + gpsRead() + "|" + bmeRead() + "|" + acceleroRead() + "|" + " 1");
+        //Serial.println(Serial0.read());
+      //}
     }
+}
+
+String stringToHex(String input) {
+  String output = "";
+
+  // A karakterek végigiterálása
+  for (int i = 0; i < input.length(); i++) {
+    // Karakter konvertálása hexadecimális formába
+    char hexChar[3];
+    sprintf(hexChar, "%02X", input[i]);
+
+    // Hexadecimális karakterlánc hozzáadása az eredményhez
+    output += hexChar;
+  }
+
+  return output;
 }
 
 String acceleroRead() {
