@@ -5,6 +5,10 @@
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
+#include "TimeLib.h"
+
+tmElements_t my_time;  // time elements structure
+time_t unix_timestamp; // a timestamp
 
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
     Serial.printf("Listing directory: %s\n", dirname);
@@ -86,13 +90,15 @@ void writeFile(fs::FS &fs, const char * path, const char * message){
     file.close();
 }
 
+int nosave = 0;
+
 void appendFile(fs::FS &fs, const char * path, const char * message){
     Serial.printf("Appending to file: %s\n", path);
 
     File file = fs.open(path, FILE_APPEND);
     if(!file){
         Serial.println("Failed to open file for appending");
-        return;
+        nosave = 1;
     }
     if(file.print(message)){
         Serial.println("Message appended");
@@ -162,7 +168,7 @@ void testFileIO(fs::FS &fs, const char * path){
     file.close();
 }
 
-String lora_mod, lora_sf;
+String lora_mod, lora_sf, lora_pa, lora_crc, lora_cr;
 int lora_freq, lora_pwr, lora_bw, lora_sync;
 
 void extractDataFromString(String data) {
@@ -201,6 +207,12 @@ void extractDataFromString(String data) {
         lora_bw = value.toInt();
       } else if (key.equals("lora_sync")) {
         lora_sync = value.toInt();
+      } else if (key.equals("lora_pa")) {
+        lora_pa = value;
+      } else if (key.equals("lora_crc")) {
+        lora_crc = value;
+      } else if (key.equals("lora_cr")) {
+        lora_cr = value;
       }
     }
   }
@@ -264,6 +276,9 @@ Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
 */
 sensors_event_t event; 
 
+  int flights = 1;
+
+
 void setup() {
     locSerial.begin(9600, EspSoftwareSerial::SWSERIAL_8N1, 7, 8);
     carbondioxideSerial.begin(9600, EspSoftwareSerial::SWSERIAL_8N1, 5, 6);
@@ -279,23 +294,47 @@ void setup() {
   }
 
   String settingsfiledata = readFile(SD, "/settings.csat");
+  String flightcounter = readFile(SD, "/flightcounter.csat");
+
+  createDir(SD, "/flight_logs");
+  if(flightcounter == "ßß-NA$$-"){
+    writeFile(SD, "/flightcounter.csat", "1");
+  } else {
+    flights = flightcounter.toInt();
+    int nfew = flights+1;
+    writeFile(SD, "/flightcounter.csat", String(nfew).c_str());
+  }
+
+  //writeFile(SD, String("/flight_logs/"+String(flights)+".txt").c_str(), "");
 
   if(settingsfiledata == "ßß-NA$$-"){
-    writeFile(SD, "/settings.csat", "lora_mod=lora\nlora_freq=868100000\nlora_pwr=1\nlora_sf=sf7\nlora_bw=125\nlora_sync=34");
+    writeFile(SD, "/settings.csat", "lora_mod=lora\nlora_freq=868100000\nlora_pwr=1\nlora_sf=sf7\nlora_crc=on\nlora_cr=3/4\nlora_bw=125\nlora_sync=34\nlora_pa=on");
   }
 
   extractDataFromString(settingsfiledata);
-  Serial0.println("radio set mod " + lora_mod);
-  sleep(1);
-  Serial0.println("radio set freq " + String(lora_freq));
-  sleep(1);
-  Serial0.println("radio set pwr " + String(lora_pwr));
-  sleep(1);
-  Serial0.println("radio set sf " + lora_sf);
-  sleep(1);
-  Serial0.println("radio set bw " + String(lora_bw));
-  sleep(1);
-  Serial0.println("radio set sync " + String(lora_sync));
+  for(int i = 0; i<5; i++){
+    Serial.println(i);
+    sleep(0.1);
+    Serial0.println("radio set mod " + lora_mod);
+    sleep(0.1);
+    Serial0.println("radio set freq " + String(lora_freq));
+    sleep(0.1);
+    Serial0.println("radio set pwr " + String(lora_pwr));
+    sleep(0.1);
+    Serial0.println("radio set sf " + lora_sf);
+    sleep(0.1);
+    Serial0.println("radio set bw " + String(lora_bw));
+    sleep(0.1);
+    Serial0.println("radio set sync " + String(lora_sync));
+    sleep(0.1);
+    Serial0.println("radio set pa " + String(lora_pa));
+    sleep(0.1);
+    Serial0.println("radio set crc " + String(lora_crc));
+    sleep(0.1);
+    Serial0.println("radio set cr " + String(lora_cr));
+    sleep(0.1);
+  }
+  
     //while(!Serial); // Várakozás a serial kapcsolat felépülésére
      
     /*
@@ -330,6 +369,7 @@ void setup() {
       GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
       GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
       GPS.sendCommand(PGCMD_ANTENNA);
+
 
       delay(1000);
   
@@ -387,9 +427,29 @@ void loop() {
       //gps|gps_speed|gps_muhold|gps_time|gps_angle|temperature|humidity|pressure|calibrated_alt|x_real|y_real|z_real|x|y|z
       //if(Serial0.available()){
         //Serial.println(carbondioxideSerial.read());
-        Serial0.println("radio tx " + stringToHex(gpsRead() + "|" + bmeRead() + "|" + acceleroRead()) + " 1");
-        Serial.println("radio tx " + stringToHex(gpsRead() + "|" + bmeRead() + "|" + acceleroRead()) + " 1");
+        String adat = gpsRead() + "|" + bmeRead() + "|" + acceleroRead();
+        Serial0.println("radio tx " + stringToHex(adat) + " 1");
+        //Serial.println("radio tx " + stringToHex(adat) + " 1");
+        if(nosave == 0){
+          int year = GPS.year + 2000;
+          int month = GPS.month;
+          int day = GPS.day;
+          int hour = GPS.hour;
+          int minute = GPS.minute;
+          int second = GPS.seconds;
+          Serial.println(GPS.year);
+if(GPS.year > 0){
+  setTime(hour,minute,second,day,month,year); // alternative to above, yr is 2 or 4 digit yr
+  unix_timestamp = now();
+  Serial.println("ZSIDO");
+} else {
+  unix_timestamp = 0;
+}
 
+int tstint = static_cast<int>(unix_timestamp);
+        Serial.println(unix_timestamp);
+          appendFile(SD, String("/flight_logs/" + String(flights) + ".txt").c_str(), String(tstint + "@#" + adat + "\n").c_str());
+        }
       //} else {
         //Serial.println("radio tx " + gpsRead() + "|" + bmeRead() + "|" + acceleroRead() + "|" + " 1");
         //Serial.println(Serial0.read());
@@ -401,7 +461,7 @@ String stringToHex(String input) {
   String output = "";
 
   // A karakterek végigiterálása
-  for (int i = 0; i < input.length(); i++) {
+  for (int i = 0; i < input.length(); i ++) {
     // Karakter konvertálása hexadecimális formába
     char hexChar[3];
     sprintf(hexChar, "%02X", input[i]);
@@ -411,6 +471,18 @@ String stringToHex(String input) {
   }
 
   return output;
+}
+
+unsigned long convertToEpochTimestamp(int year, int month, int day, int hour, int minute, int second) {
+  struct tm timeinfo;
+  timeinfo.tm_year = year - 1900; // Az évek számozása 1900-tól indul
+  timeinfo.tm_mon = month - 1;     // A hónapok számozása 0-tól indul
+  timeinfo.tm_mday = day;
+  timeinfo.tm_hour = hour;
+  timeinfo.tm_min = minute;
+  timeinfo.tm_sec = second;
+
+  return mktime(&timeinfo);
 }
 
 String acceleroRead() {
