@@ -284,13 +284,13 @@ void setup() {
     carbondioxideSerial.begin(9600, EspSoftwareSerial::SWSERIAL_8N1, 5, 6);
     Serial0.begin(115200, SERIAL_8N1, 1, 0);
     Serial.begin(115200);
-    delay(5000);
+    delay(3000);
 
     Serial.print("Initializing SD card...");
 
   if (!SD.begin(10)) {
     Serial.println("initialization failed!");
-    while (1);
+    //while (1);
   }
 
   String settingsfiledata = readFile(SD, "/settings.csat");
@@ -388,25 +388,6 @@ void setup() {
     //Serial.println("Ooops, no ADXL345 detected ... Check your wiring!");
     while(1);
   }
-
-  /* Set the range to whatever is appropriate for your project */
-  accel.setRange(ADXL345_RANGE_2_G);
-
-  delay(2000);
-
-  for(int i = 0; i<20; i++){
-    pInit = pInit + (bme.readPressure()/100.0F);
-    accel.getEvent(&event);
-    xInit = xInit + event.acceleration.x;
-    yInit = yInit + event.acceleration.y;
-    zInit = zInit + event.acceleration.z;
-    delay(100);
-  }
-
-  xHiba = xVart-(xInit/20);
-  yHiba = yVart-(yInit/20);
-  zHiba = zVart-(zInit/20);
-  seaLevel = pInit/20;
 }
 
 uint32_t timer = millis();
@@ -420,14 +401,14 @@ void loop() {
       if (!GPS.parse(GPS.lastNMEA())) return;
     }
 
-    if (millis() - timer > 50) {
+    if (millis() - timer > 200) {
       timer = millis();
       //int sensorPin = A7;
       //int sensorValue = analogRead(sensorPin);
-      //gps|gps_speed|gps_muhold|gps_time|gps_angle|temperature|humidity|pressure|calibrated_alt|x_real|y_real|z_real|x|y|z
+      //gps|gps_muhold|gps_time|gps_angle|temperature|humidity|pressure|calibrated_alt|x_real|y_real|z_real|methane|co2
       //if(Serial0.available()){
         //Serial.println(carbondioxideSerial.read());
-        String adat = gpsRead() + "|" + bmeRead() + "|" + acceleroRead();
+        String adat = gpsRead() + "|" + bmeRead() + "|" + acceleroRead() + "|" + methaneRead() + "|" + co2Read();
         Serial0.println("radio tx " + stringToHex(adat) + " 1");
         //Serial.println("radio tx " + stringToHex(adat) + " 1");
         if(nosave == 0){
@@ -488,10 +469,11 @@ unsigned long convertToEpochTimestamp(int year, int month, int day, int hour, in
 String acceleroRead() {
   sensors_event_t event; 
   accel.getEvent(&event);
-  return String(event.acceleration.x) + "|" + String(event.acceleration.y) + "|" + String(event.acceleration.z)  + "|" + String(event.acceleration.x + xHiba) + "|" + String(event.acceleration.y + yHiba) + "|" + String(event.acceleration.z + zHiba);
+  return String(event.acceleration.x) + "|" + String(event.acceleration.y) + "|" + String(event.acceleration.z);
 }
 
 String bmeRead() {
+  //temp|humidity|pressure|altitude
   return String(bme.readTemperature()) + "|" + String(bme.readHumidity()) + "|" + String(bme.readPressure() / 100.0F)  + "|" + String(bme.readAltitude(seaLevel));
 }
 
@@ -501,10 +483,15 @@ String gpsRead() {
   if (GPS.hour < 10) { gpsdecimal = "0"; }
   if (GPS.minute < 10) { mgpsdecimal = "0"; }
   if (GPS.seconds < 10) { sgpsdecimal = "0"; }
+  //coords|sat|date|angle
 
   return String(GPS.latitudeDegrees, 5) + ", " + String(GPS.longitudeDegrees, 5) + "|" + String(GPS.satellites) + "|20" + String(GPS.year) + "-" + String(GPS.month) + "-" + String(GPS.day) + " " + String(gpsdecimal) + String(GPS.hour) + ":" + String(mgpsdecimal) + String(GPS.minute) + ":" + String(sgpsdecimal) + String(GPS.seconds) + "|" + String(GPS.angle);
 }
 
 String methaneRead() {
+  return "0";
+}
+
+String co2Read() {
   return "0";
 }
