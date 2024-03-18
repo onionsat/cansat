@@ -376,7 +376,7 @@ void setup() {
   if (locSerial) {
     GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
     GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
-    GPS.sendCommand(PGCMD_ANTENNA);
+    //GPS.sendCommand(PGCMD_ANTENNA);
     delay(1000);
     locSerial.println(PMTK_Q_RELEASE);
   } else {
@@ -403,7 +403,7 @@ void loop() {
   char c = GPS.read();
 
   if (GPS.newNMEAreceived()) {
-    //if (!GPS.parse(GPS.lastNMEA())) return;
+    GPS.parse(GPS.lastNMEA());
   }
 
   if (millis() - timer > 200) {
@@ -446,7 +446,7 @@ void loop() {
         timestamp = packets*1000;
       }
 
-      String adatsor = String(String(timestamp) + "@#" + adat + "\n");
+      String adatsor = String(String(timestamp) + "000@#" + adat + "\n");
       appendFile(SD, String("/flight_logs/" + String(flights) + ".txt").c_str(), adatsor.c_str());
     }
   }
@@ -501,7 +501,7 @@ unsigned long getUnixTimestamp(int year, int month, int day, int hour, int minut
     // Számoljuk az órák, percek és másodpercek eltelt másodperceit
     unsigned long timestamp = days * secondsPerDay + hour * secondsPerHour + minute * secondsPerMinute + second;
     
-    return timestamp*1000;
+    return timestamp;
 }
 
 String acceleroRead() {
