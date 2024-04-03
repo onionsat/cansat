@@ -167,8 +167,7 @@ void testFileIO(fs::FS &fs, const char *path) {
   file.close();
 }
 
-String lora_mod, lora_sf, lora_pa, lora_crc, lora_cr;
-int lora_freq, lora_pwr, lora_bw, lora_sync;
+String lora_mod, lora_sf, lora_pa, lora_crc, lora_cr, lora_freq, lora_pwr, lora_bw, lora_sync;
 
 void extractDataFromString(String data) {
   // A String-et sorokra bontja a sortörés alapján
@@ -197,15 +196,15 @@ void extractDataFromString(String data) {
       if (key.equals("lora_mod")) {
         lora_mod = value;
       } else if (key.equals("lora_freq")) {
-        lora_freq = value.toInt();
+        lora_freq = value;
       } else if (key.equals("lora_pwr")) {
-        lora_pwr = value.toInt();
+        lora_pwr = value;
       } else if (key.equals("lora_sf")) {
         lora_sf = value;
       } else if (key.equals("lora_bw")) {
-        lora_bw = value.toInt();
+        lora_bw = value;
       } else if (key.equals("lora_sync")) {
-        lora_sync = value.toInt();
+        lora_sync = value;
       } else if (key.equals("lora_pa")) {
         lora_pa = value;
       } else if (key.equals("lora_crc")) {
@@ -316,24 +315,26 @@ void setup() {
     for (int i = 0; i < 5; i++) {
       Serial.println(i);
       delay(50);
-      Serial0.println("radio set freq 868200000");
+      Serial0.println("radio set freq " + lora_freq);
       delay(50);
-      Serial0.println("radio set bw 125");
+      Serial0.println("radio set bw 250");
       delay(50);
-      Serial0.println("radio set pa off");
+      Serial0.println("radio set pa " + lora_pa);
       delay(50);
-      Serial0.println("radio set pwr 7");
+      Serial0.println("radio set pwr " + lora_pwr);
       delay(50);
-      Serial0.println("radio set sync 35");
+      Serial0.println("radio set sync " + lora_sync);
+      delay(50);
+      Serial0.println("radio set sf " + lora_sf);
       delay(50);
     }
   }
   
-  Serial0.println("radio set freq 868200000");
-  Serial0.println("radio set bw 250");
-  Serial0.println("radio set pa on");
-  Serial0.println("radio set pwr 20");
-  Serial0.println("radio set sync 35");
+  /*Serial0.println("radio set freq 868200000");
+  Serial0.println("radio set bw 125");
+  Serial0.println("radio set pa off");
+  Serial0.println("radio set pwr 7");
+  Serial0.println("radio set sync 35");*/
 
   
 
